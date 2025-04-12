@@ -1,0 +1,25 @@
+
+CREATE OR REPLACE FUNCTION public.fn_get_employee_list_count(
+	designationid bigint,
+	minsalary double precision,
+	maxsalary double precision)
+    RETURNS TABLE(count bigint) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+    ROWS 1000
+
+AS $BODY$
+begin
+	return query
+	SELECT count(*)	from employee e
+	inner join department dep on  dep.id=e.department_id
+	inner join designation desi on  desi.id=e.designation_id
+	inner join salary sal on sal.id=e.salary_id
+	where (designationId is null or designationId=desi.id) and  (minSalary is null or minSalary <= sal.amount)
+	and (maxSalary is null or maxSalary >= sal.amount)
+    order by e.id desc offset size *(page)
+    fetch next size row only;
+    end;
+
+$BODY$;
